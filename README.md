@@ -1,5 +1,5 @@
 # NodeJsScan - mod
-An mod version of NodeJsScan. In this version, I just added a new API which receives source code in zip file, analyze and return result in json format
+A mod version of NodeJsScan. In this version, I just added a new API which receives source code in zip file, analyze and return result in json format
 
 [About NodeJsScan] (https://github.com/ajinabraham/NodeJsScan)
 
