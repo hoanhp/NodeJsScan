@@ -16,5 +16,10 @@ NodeJsScan Docker images can be built for both the Web UI and CLI version.
 
 ## Demo 
 
+###Static Scan Results by ANALYZE API
+
 ![Static Scan Results by ANALYZE API](https://raw.githubusercontent.com/hoanhp/NodeJsScan/master/assets/Screen%20Shot%202020-03-25%20at%202.07.38%20AM.png)
+
+###Screen when Docker run
+
 ![Screen when Docker run](https://raw.githubusercontent.com/hoanhp/NodeJsScan/master/assets/Screen%20Shot%202020-03-25%20at%202.15.32%20AM.png)
