@@ -33,6 +33,7 @@ class Results(Base):
     resolved = Column(JSON)
     invalid = Column(JSON)
     timestamp = Column(DateTime())
+    time_execute = Column(Integer)
 
     def __init__(self, *args):
         """init"""
@@ -50,6 +51,7 @@ class Results(Base):
         self.resolved = args[11]
         self.invalid = args[12]
         self.timestamp = args[13]
+        self.time_execute = args[14]	
 
     def __repr__(self):
         """repr"""
