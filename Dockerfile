@@ -1,11 +1,12 @@
 FROM postgres:9.6.2-alpine
-LABEL authors="Cristobal Infantes <cristobal.infantes@gmail.com>" \
-   maintainer="Ajin Abraham <ajin25@gmail.com>" \
-   description="Static Security Code Scanner for Node.js Applications"
 EXPOSE 9090
-ENV POSTGRES_USER root
+RUN adduser -D myuser
+ENV POSTGRES_USER myuser
 ENV POSTGRES_DB nodejsscan
-WORKDIR /usr/src/NodeJsScan
+ENV POSTGRES_PASSWORD "password"
+ENV PGDATA=/var/lib/postgresql/data/test
+WORKDIR /usr/src/NodeJsScan-mod
+RUN chmod -R 777 /var/run/postgresql/
 COPY requirements.txt requirements.txt
 COPY ./core/settings.py ./core/settings.py
 RUN apk add --no-cache \
@@ -18,3 +19,4 @@ RUN apk add --no-cache \
    && apk del python3-dev build-base
 COPY . .
 CMD ["sh","start.sh"]
+USER myuser
