@@ -3,6 +3,7 @@
 """
 NodeJsScan Web UI
 """
+import json
 import os
 import io
 import time
@@ -12,13 +13,14 @@ from werkzeug.routing import BaseConverter
 from werkzeug.utils import secure_filename
 from flask import Flask, jsonify, request
 from flask import render_template
+from collections import OrderedDict
 
 import core.settings as settings
 import core.utils as utils
 
 from core.scanner import scan_dirs
 from migrate import db_session, Results
-
+from pprint import pprint
 
 class RegexConverter(BaseConverter):
 
@@ -64,7 +66,7 @@ def index():
     return render_template("index.html", **context)
 
 
-@app.route('/upload/', methods=['POST'])
+@app.route('/upload/', methods=['POST']) #remove
 def upload():
     """Upload Zipped Source"""
     if 'file' in request.files:
@@ -117,6 +119,7 @@ def upload():
                                  [],
                                  [],
                                  tms,
+                                 0
                                  )
                 db_session.add(res_db)
                 db_session.commit()
@@ -162,28 +165,11 @@ def result(sha2):
                    'vuln_n_count': utils.python_dict(res.vuln_count),
                    'resolved': utils.python_list(res.resolved),
                    'invalid': utils.python_list(res.invalid),
-                   'version': settings.VERSION
+                   'version': settings.VERSION 
                    }
         return render_template("result.html", **context)
     else:
         return jsonify({"error": "scan_not_found"})
-
-
-@app.route('/resolve', methods=['POST'])
-def resolve():
-    """Mark if it's not an issue"""
-    scan_hash = request.form["scan_hash"]
-    finding_hash = request.form["finding_hash"]
-    if utils.sha2_match_regex(scan_hash) and utils.sha2_match_regex(finding_hash):
-        res = Results.query.filter(Results.scan_hash == scan_hash)
-        if res.count():
-            reslvd = utils.python_list(res[0].resolved)
-            if finding_hash not in reslvd:
-                reslvd.append(finding_hash)
-                res.update({"resolved": reslvd})
-                db_session.commit()
-                return jsonify({"status": "ok"})
-    return jsonify({"status": "failed"})
 
 
 @app.route('/revert', methods=['POST'])
@@ -305,6 +291,103 @@ def delete_scan():
             db_session.commit()
             context = {"status": "ok"}
     return jsonify(**context)
+
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    """Upload and analyze source code. Output JSON"""
+    if 'file' in request.files:
+        filen = request.files['file']
+        _, extension = os.path.splitext(filen.filename.lower())
+        # Check for Valid ZIP
+        if (filen and
+                filen.filename and
+                extension in settings.UPLD_ALLOWED_EXTENSIONS and
+                filen.mimetype in settings.UPLD_MIME):
+            filename = secure_filename(filen.filename)
+            # Make upload dir
+            if not os.path.exists(settings.UPLOAD_FOLDER):
+                os.makedirs(settings.UPLOAD_FOLDER)
+            # Save file
+            zip_file = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            filen.save(zip_file)
+            # Get zip hash
+            get_zip_hash = utils.gen_sha256_file(zip_file)
+            res = Results.query.filter(Results.scan_hash == get_zip_hash)
+            time_execute = 0
+            #Check if file is scanned before
+            if not res.count():
+                path_dir = os.path.join(
+                    app.config['UPLOAD_FOLDER'], get_zip_hash + "/")
+                # Make app analysis dir
+                if not os.path.exists(path_dir):
+                    os.makedirs(path_dir)
+                # Unzip
+                utils.unzip(zip_file, path_dir)
+                start_time = time.time()
+                scan_results = scan_dirs([path_dir])
+                time_execute = round(time.time() - start_time, 3)
+                _, sha2_hashes, hash_of_sha2 = utils.gen_hashes([path_dir])
+                tms = datetime.datetime.fromtimestamp(
+                    time.time()).strftime('%Y-%m-%d %H:%M:%S')
+                print("[INFO] Saving Scan Results!")
+                res_db = Results(filename,
+                                 get_zip_hash ,
+                                 [path_dir],
+                                 sha2_hashes,
+                                 hash_of_sha2,
+                                 scan_results['sec_issues'],
+                                 scan_results['good_finding'],
+                                 scan_results['missing_sec_header'],
+                                 scan_results['files'],
+                                 scan_results['total_count'],
+                                 scan_results['vuln_count'],
+                                 [],
+                                 [],
+                                 tms,
+                                 time_execute,
+                                 )
+                db_session.add(res_db)
+                db_session.commit()
+                # Get scan results from database
+                res = Results.query.filter(Results.scan_hash == get_zip_hash)
+            output = []
+            iss_count = 0
+            _type = "sast"
+            time_execute =  res.first().time_execute
+            for group, issues in (res.first().sec_issues).items():
+                for issue in issues:
+                    iss_count += 1
+                    _location = {}
+                    _ruleId = issue['title']
+                    _location['path'] = issue["path"]
+                    _location['positions'] = {}
+                    _location['positions']['begin'] = {}
+                    _location['positions']['begin']['line'] = issue['line']
+                    _metadata = {}
+                    _metadata["description"] = issue['description']
+                    output.append({'type':_type, "ruleId":_ruleId, "location":_location, "metadata": _metadata})
+            response = {
+            "engine": {
+                "name":"guardrails/engine-javascript-nodejsscan",
+                "version":"1.0.0"
+                },
+            "process": {
+                "name" : "nodejsscan",
+                "version" : "3.4"
+                },
+            "language" : "javascript",
+            "status" : "success",
+            "executionTime": time_execute*1000,
+            "issues" : iss_count,
+            "output" : output
+            }
+            return (json.dumps(OrderedDict(response)))
+        else:
+            return "Only accept zip file\n"
+    else:
+        return "Missing param file\n"
+    return "Internal errors\n"
 
 
 if __name__ == '__main__':
