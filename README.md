@@ -3,21 +3,6 @@ A mod version of NodeJsScan. In this version, I just added a new API which recei
 
 [About NodeJsScan](https://github.com/ajinabraham/NodeJsScan)
 
-## Configure & Run 
-
-Install Postgres and configure `SQLALCHEMY_DATABASE_URI` in `core/settings.py`
-
-```bash
-pip3 install -r requirements.txt
-python3 migrate.py # Run once to create database entries required
-python3 app.py # Testing Environment
-gunicorn -b 0.0.0.0:9090 app:app --workers 3 --timeout 10000 # Production Environment
-```
-
-This will run NodeJsScan on `http://0.0.0.0:9090`
-
-If you need to debug, set `DEBUG = True` in `core/settings.py`
-
 ## Docker
 
 NodeJsScan Docker images can be built for both the Web UI and CLI version.
