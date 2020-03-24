@@ -14,15 +14,6 @@ NodeJsScan Docker images can be built for both the Web UI and CLI version.
   docker run -it -p 9090:9090 nodejsscan
   ```
 
-* CLI
-
-  ```bash
-  # Use -f to override default Dockerfile
-  docker build -t nodejsscan-cli -f cli.dockerfile  .
-  # Mount a volume to the container that points to your source directory and reference it in -f, -d and -o arguments
-  docker run -v /path-to-source-dir:/src nodejsscan-cli -d /src -o /src/results.json
-  ```
-
 ## Demo 
 
 ![NodeJsScan Static Scan Results](https://user-images.githubusercontent.com/4301109/33951861-294062a0-e056-11e7-8472-3c101be52390.jpg)
