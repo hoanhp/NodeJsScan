@@ -5,7 +5,7 @@ A mod version of NodeJsScan. In this version, I just added a new API which recei
 
 ## INSTALL AND RUN TEST
 
-NodeJsScan Docker images can be built for both the Web UI and CLI version.
+tools folder contains tools for building container and run test
 
 * Build and run docker container
 
