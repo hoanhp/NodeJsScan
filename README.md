@@ -13,10 +13,10 @@ NodeJsScan Docker images can be built for both the Web UI and CLI version.
   cd tools && ./build.sh
   ```
   
-* Web UI
+* Run test against test-src
 
   ```bash
-    cd tools && ./run.sh
+  cd tools && ./run.sh
   ```
 
 ## Demo 
